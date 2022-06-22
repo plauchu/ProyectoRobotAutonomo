@@ -1,0 +1,254 @@
+#define MotR1 8
+#define MotR2 9
+#define MotL1 12
+#define MotL2 13
+#define ENABLER 10
+#define ENABLEL 11
+#define LuzC A0
+#define LuzR A3
+#define LuzL A2
+#define LuzA A1
+int vD = 150;
+int vI = 150;
+int dist_completa = 8500;
+int dist_parcial = 2000;
+int noventaD = 449;
+int noventaI =451;
+float C;
+int R;
+int L;
+int estado=0;
+int A;
+
+
+//sensores
+ 
+#define trigPin 6  // Disparador (Trigger)
+#define echoPin 7// Eco (Echo) 
+
+long duracion, distancia, duracion2, distancia2;
+#include <SharpDistSensor.h>
+
+// Analog pin to which the sensor is connected
+const byte sensorPin = A4;
+const byte sensorPin2 = A5;
+
+// Window size of the median filter (odd number, 1 = no filtering)
+const byte medianFilterWindowSize = 5;
+
+// Create an object instance of the SharpDistSensor class
+SharpDistSensor sensor(sensorPin, medianFilterWindowSize);
+SharpDistSensor sensor2(sensorPin2, medianFilterWindowSize);
+ 
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(MotR1,OUTPUT);
+  pinMode(MotR2,OUTPUT);
+  pinMode(MotL1,OUTPUT);
+  pinMode(MotL2,OUTPUT);
+  pinMode(ENABLER,OUTPUT);
+  pinMode(ENABLEL,OUTPUT);
+
+  analogWrite(ENABLER, vD);
+  analogWrite(ENABLEL, vI);
+
+  //sensores
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+ 
+  sensor.setModel(SharpDistSensor::GP2Y0A41SK0F_5V_DS);
+  
+  sensor2.setModel(SharpDistSensor::GP2Y0A41SK0F_5V_DS);
+}
+
+void loop() {
+  //delay(3000);
+  //actividad4();
+  //stopp();
+  C=analogRead(LuzC);
+  R=analogRead(LuzR)-50;
+  L=analogRead(LuzL);
+  A=analogRead(LuzA);
+  unsigned int distance = sensor.getDist();
+  unsigned int distance2 = sensor2.getDist();
+  Serial.print("Center: ");
+  Serial.println(C);
+  Serial.print("Right: ");
+  Serial.println(R);
+  Serial.print("Left: ");
+  Serial.println(L);
+  Serial.print("distance: ");
+  Serial.println(distance);//derecho
+  Serial.print("distance2: ");
+  Serial.println(distance2);//izquierdo
+  
+
+
+  Ultrasonico(); //centro
+
+ //código a probar
+ //Llegó a su destino
+  if(C>990 or R>980 or L>980){
+    stopp();
+  }else{ //Busca llegar a su destino
+    //no hay objetos cerca
+    //avanza siguiendo la luz
+    if(distance>=80 and distance2>=80 and distancia>10){
+      Serial.print("no hay obstaculo: ");
+      if(C>R and C>L)
+      
+        forward();
+        
+      else{
+        
+        if(R>C){
+          right();
+        }else{
+          left();
+          
+        }}
+    }else{ //objeto cerca. Avanza siguiendo los sensores de movimiento
+      //Hay un objeto en el centro y el sensor de la izquierda detecta algo más cerca que el de la derecha.
+      //O detecta un objeto en el lado derecho 
+      if((distancia<10 and distance>distance2) or distancia<15){
+        right();
+        Serial.print("hay obstaculo al frente: ");
+        delay(100);
+      }else {
+      //Objeto en el lado izquierdo 
+      //O en el centro, el sensor de la izquierda detecta algo más lejos que el de la derecha.
+      if(distancia<10 and distance<distance2){
+        left();
+        delay(50);} }}
+
+      if(distance2<60){
+        Serial.print("hay obstaculo a la izq: ");
+        right();
+        delay(50);
+      }
+      if(distance<60){
+        left();
+        delay(50);
+        Serial.print("hay obstaculo a la derecha: ");
+      }
+  }}
+
+ 
+ //código anterior que   no funciona chido
+//    if(C>1023 or R>1023 or L>1023)
+//    stopp();
+//    else{
+//      if(C>R*0.9 and C>L*1.1 and (distance>=60 and distance2>=60 and distancia>=8)){
+//        forward(); //no hay obstaculo, luz en el centro
+//        delay(200);
+//        //right();
+//        //delay(50);
+//      }
+//      else {
+//        if(L*1.1>C or (distance < 60) or (distance2<60 and R<L*1.1))
+//          left(); //obstaculo derecha o luz en la izquierda
+//        else 
+//          right(); //obstaculo izquierda o luz en la derecha
+//        delay(250);
+//      }
+//    }
+//    stopp(); 
+
+
+void forward() {
+  Serial.println("Estamos utilizando la función FORWARD.");
+  digitalWrite(MotR1, HIGH);
+  digitalWrite(MotR2, LOW);
+  digitalWrite(MotL1, HIGH);
+  digitalWrite(MotL2, LOW);
+}
+
+void backward() {
+  Serial.println("Estamos utilizando la función BACKWARD.");
+  digitalWrite(MotR1, LOW);
+  digitalWrite(MotR2, HIGH);
+  digitalWrite(MotL1, LOW);
+  digitalWrite(MotL2, HIGH);
+}
+
+void right() {
+  Serial.println("Estamos utilizando la función RIGHT.");
+  digitalWrite(MotR1, LOW);
+  digitalWrite(MotR2, HIGH);
+  digitalWrite(MotL1, HIGH);
+  digitalWrite(MotL2, LOW);
+}
+
+void left() {
+  Serial.println("Estamos utilizando la función LEFT.");
+  digitalWrite(MotR1, HIGH);
+  digitalWrite(MotR2, LOW);
+  digitalWrite(MotL1, LOW);
+  digitalWrite(MotL2, HIGH);
+}
+
+void stopp() {
+  Serial.println("Estamos utilizando la función STOP.");
+  digitalWrite(MotR1, LOW);
+  digitalWrite(MotR2, LOW);
+  digitalWrite(MotL1, LOW);
+  digitalWrite(MotL2, LOW);
+}
+
+void actividad3() {
+  delay(3000);
+  forward();
+  delay(dist_completa);
+  stopp();
+}
+
+void actividad4() {
+  delay(3000);
+  forward();
+  delay(dist_completa);
+  right();
+  delay(noventaD);
+  stopp();
+  delay(2000);
+  forward();
+  delay(dist_parcial);
+  right();
+  delay(noventaI);
+  stopp();
+  delay(2000);
+  forward();
+  delay(dist_completa);
+  left();
+  delay(noventaI);
+  stopp();
+  delay(2000);
+  forward();
+  delay(dist_parcial);
+  left();
+  delay(noventaD);
+  stopp();
+  delay(2000);
+  forward();
+}
+
+void Ultrasonico(){
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+ 
+  
+  pinMode(echoPin, INPUT);
+  duracion = pulseIn(echoPin, HIGH);
+ 
+  // Convierte el tiempo en distancia
+  distancia = 0.0343*(duracion/2);     // Divide entre 29.1 o multiplica por 0.0343
+  
+  Serial.print(distancia);
+  Serial.println(" cm");
+  
+  
+  //delay(100);
+}
